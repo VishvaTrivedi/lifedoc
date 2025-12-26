@@ -1,1 +1,28 @@
 @import "tailwindcss";
+@layer base {
+  * {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/80 backdrop-blur-lg border border-white/20;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition transform hover:scale-105;
+  }
+
+  .card-hover {
+    @apply hover:shadow-xl hover:border-blue-300 transition transform hover:-translate-y-1;
+  }
+}
