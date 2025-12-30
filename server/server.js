@@ -8,6 +8,7 @@ const diaryRoutes = require("./routes/diary");
 const labReportRoutes = require("./routes/labReports");
 const doctorReportRoutes = require("./routes/doctorReports");
 const aiRoutes = require("./routes/ai");
+const newsRoutes = require("./routes/news");
 
 const app = express();
 dotenv.config();
@@ -31,6 +32,7 @@ app.use("/api/diary", diaryRoutes);
 app.use("/api/lab-reports", labReportRoutes);
 app.use("/api/doctor-reports", doctorReportRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/news", newsRoutes);
 
 const PORT = process.env.SERVER_PORT || 3001;
 

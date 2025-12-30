@@ -25,7 +25,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
     const navItems = [
         { name: 'Dashboard', path: '/dashboard', icon: FaHome },
         { name: 'AI Consultation', path: '/consultation', icon: FaMicrophone },
-        { name: 'Rx Scanner', path: '/scan', icon: FaCamera },
+        // { name: 'Rx Scanner', path: '/scan', icon: FaCamera },
         { name: 'Measurements', path: '/measurements', icon: FaHeartbeat },
         { name: 'Diary', path: '/diary', icon: FaBookMedical },
         { name: 'Lab Reports', path: '/lab-reports', icon: FaFileMedical },
