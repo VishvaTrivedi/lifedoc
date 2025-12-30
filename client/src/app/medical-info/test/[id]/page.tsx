@@ -5,7 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
-import { FaArrowLeft, FaVial, FaNotesMedical, FaClipboardCheck, FaInfoCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaVial, FaNotesMedical, FaInfoCircle, FaClipboardCheck, FaMicroscope, FaFlask, FaClipboardList } from 'react-icons/fa';
 
 interface LabTest {
     _id: string;
@@ -80,58 +80,66 @@ const TestDetailsPage = () => {
                     <FaArrowLeft className="mr-2" /> Back
                 </button>
 
-                <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-8 border-b border-gray-100">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <span className="inline-block px-3 py-1 bg-white/60 text-purple-600 rounded-lg text-sm font-bold mb-3 border border-purple-100">
-                                    {test.category}
+                <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+                    <div className="bg-[#3AAFA9]/10 p-8 border-b border-[#3AAFA9]/20">
+                        <div className="flex items-center space-x-4 mb-4">
+                            <div className="p-3 bg-white rounded-xl shadow-sm text-2xl text-[#3AAFA9]">
+                                <FaMicroscope />
+                            </div>
+                            <span className="px-3 py-1 bg-white/60 text-[#2B7A78] text-sm font-semibold rounded-full border border-[#3AAFA9]/20">
+                                {test.category}
+                            </span>
+                            {test.source === 'MedlinePlus' && (
+                                <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full border border-blue-200">
+                                    MedlinePlus API
                                 </span>
-                                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">
-                                    {test.name}
-                                </h1>
-                                <p className="text-gray-600 text-lg leading-relaxed max-w-2xl">
-                                    {test.description}
-                                </p>
-                            </div>
-                            <div className="bg-white p-4 rounded-2xl shadow-sm text-purple-500 hidden md:block">
-                                <FaVial className="text-4xl" />
-                            </div>
+                            )}
+                        </div>
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">{test.name}</h1>
+
+                        {/* Description (Handle HTML if from API) */}
+                        <div className="text-gray-700 text-lg leading-relaxed max-w-4xl">
+                            <div dangerouslySetInnerHTML={{ __html: test.description }} className="prose prose-sm md:prose-base text-gray-700" />
                         </div>
                     </div>
 
-                    <div className="p-8 space-y-8">
-                        {/* Normal Range */}
-                        <div className="bg-green-50 p-6 rounded-2xl border border-green-100">
-                            <h3 className="text-lg font-bold text-green-800 mb-2 flex items-center">
-                                <FaClipboardCheck className="mr-2" /> Normal Range
+                    <div className="p-8 grid md:grid-cols-2 gap-8">
+                        {/* Clinical Significance / Summary */}
+                        <div className="md:col-span-2 space-y-4">
+                            <h3 className="text-xl font-bold text-gray-800 flex items-center">
+                                <FaNotesMedical className="mr-2 text-green-500" />
+                                Clinical Summary
                             </h3>
-                            <p className="text-green-900 font-medium text-lg">
-                                {test.normalRange}
-                            </p>
+                            <div className="bg-green-50/50 p-6 rounded-2xl border border-green-100">
+                                <p className="text-gray-700 leading-relaxed font-medium">
+                                    {test.clinicalSignificance}
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-8">
-                            {/* Preparation */}
-                            <div className="space-y-4">
-                                <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                                    <FaInfoCircle className="mr-2 text-blue-500" />
-                                    Preparation
-                                </h3>
-                                <div className="bg-gray-50 p-6 rounded-2xl text-gray-700 leading-relaxed">
-                                    {test.preparation}
-                                </div>
+                        {/* Normal Range (Usually N/A for API) */}
+                        <div className="space-y-4">
+                            <h3 className="text-xl font-bold text-gray-800 flex items-center">
+                                <FaFlask className="mr-2 text-[#3AAFA9]" />
+                                Normal Range / Values
+                            </h3>
+                            <div className="bg-[#3AAFA9]/5 p-6 rounded-2xl border border-[#3AAFA9]/20 h-full">
+                                <p className="text-gray-700 font-medium">
+                                    {test.normalRange || 'Reference ranges vary by laboratory. Consult your doctor.'}
+                                </p>
                             </div>
+                        </div>
 
-                            {/* Clinical Significance */}
-                            <div className="space-y-4">
-                                <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                                    <FaNotesMedical className="mr-2 text-red-500" />
-                                    Clinical Significance
-                                </h3>
-                                <div className="bg-gray-50 p-6 rounded-2xl text-gray-700 leading-relaxed">
-                                    {test.clinicalSignificance}
-                                </div>
+                        {/* Preparation */}
+                        <div className="space-y-4">
+                            <h3 className="text-xl font-bold text-gray-800 flex items-center">
+                                <FaClipboardList className="mr-2 text-orange-500" />
+                                Preparation
+                            </h3>
+                            <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100 h-full">
+                                <p className="text-gray-700 font-medium">
+                                    {test.preparation || 'Follow specific instructions provided by your healthcare provider.'}
+                                </p>
                             </div>
                         </div>
                     </div>

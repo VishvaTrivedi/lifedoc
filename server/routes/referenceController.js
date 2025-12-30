@@ -37,6 +37,20 @@ const mapOpenFdaItem = (item) => {
     };
 };
 
+// Helper to extract text from XML string (simple regex based)
+const extractXmlTag = (xml, tagName) => {
+    const regex = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\/${tagName}>`, 'i');
+    const match = xml.match(regex);
+    return match ? match[1].trim() : null;
+};
+
+// Helper to extract content content based on name attribute
+const extractContentByName = (xml, name) => {
+    const regex = new RegExp(`<content name="${name}"[^>]*>([\\s\\S]*?)<\/content>`, 'i');
+    const match = xml.match(regex);
+    return match ? match[1].trim() : null;
+};
+
 exports.searchItems = async (req, res) => {
     try {
         const { query, type } = req.query; // type can be 'medicine', 'test', or 'all' (default)
@@ -49,10 +63,11 @@ exports.searchItems = async (req, res) => {
         let results = [];
 
         // 1. Search Medicines (OpenFDA)
-        if (!type || type === 'all' || type === 'medicine') {
+        // Should ONLY run if type is 'medicine' or 'all'
+        if (type === 'medicine' || type === 'all' || !type) {
             try {
                 // OpenFDA Search - require brand_name to exist to avoid garbage
-                const openFdaUrl = `https://api.fda.gov/drug/label.json?search=(openfda.brand_name:"${query}"*+OR+openfda.generic_name:"${query}"*)+AND+_exists_:openfda.brand_name&limit=10`;
+                const openFdaUrl = `https://api.fda.gov/drug/label.json?search=(openfda.brand_name:"${query}"*+OR+openfda.generic_name:"${query}"*)+AND+_exists_:openfda.brand_name&limit=5`;
                 const response = await axios.get(openFdaUrl);
 
                 if (response.data.results) {
@@ -62,22 +77,67 @@ exports.searchItems = async (req, res) => {
                     results.push(...fdaMedicines);
                 }
             } catch (fdaError) {
-                // OpenFDA returns 404 if no results found, which is fine.
                 if (fdaError.response && fdaError.response.status !== 404) {
                     console.error('OpenFDA API Error:', fdaError.message);
                 }
-                // If OpenFDA fails or returns nothing, we could fallback to local DB if we wanted, 
-                // but for now we rely on OpenFDA as requested.
             }
         }
 
-        // 2. Search Lab Tests (Local DB)
-        if (!type || type === 'all' || type === 'test') {
-            const tests = await LabTest.find({
-                $or: [{ name: regex }, { category: regex }]
-            }).select('name description category _id').limit(5);
+        // 2. Search Lab Tests (MedlinePlus API)
+        // Should ONLY run if type is 'test' or 'all'
+        if (type === 'test' || type === 'all' || !type) {
+            try {
+                // MedlinePlus Search
+                const medlineUrl = `https://wsearch.nlm.nih.gov/ws/query?db=healthTopics&term=${encodeURIComponent(query)}`;
+                const response = await axios.get(medlineUrl);
+                const xmlData = response.data;
 
-            results.push(...tests.map(t => ({ ...t.toObject(), type: 'test', source: 'Local' })));
+                // Simple regex manual parsing since we don't have xml2js
+                // We verify if we have results
+                const countMatch = extractXmlTag(xmlData, 'count');
+                if (countMatch && parseInt(countMatch) > 0) {
+                    // Extract documents
+                    const docRegex = /<document rank="\d+" url="([^"]+)">([\s\S]*?)<\/document>/g;
+                    let match;
+                    const tests = [];
+
+                    // Get top 5 results
+                    while ((match = docRegex.exec(xmlData)) !== null && tests.length < 5) {
+                        const url = match[1];
+                        const innerXml = match[2];
+
+                        const title = extractContentByName(innerXml, 'title') || 'Unknown Test';
+
+                        // Check if it's likely a test/procedure/topic
+                        // The API returns health topics. We filter loosely.
+
+                        // Clean HTML from title if present (MedlinePlus sometimes has tags in titles)
+                        const cleanTitle = title.replace(/<[^>]*>/g, '');
+                        const snippet = extractContentByName(innerXml, 'snippet') || 'No description available.';
+                        const cleanSnippet = snippet.replace(/<[^>]*>/g, '').replace(/\.{3}/g, '...');
+
+                        tests.push({
+                            _id: Buffer.from(cleanTitle).toString('base64'), // Create a stable ID from title
+                            name: cleanTitle,
+                            description: cleanSnippet.substring(0, 150) + '...',
+                            fullDescription: snippet, // Keep snippet with HTML or longer text
+                            category: 'Lab Test / Topic',
+                            type: 'test',
+                            source: 'MedlinePlus'
+                        });
+                    }
+                    results.push(...tests);
+                }
+
+            } catch (medlineError) {
+                console.error('MedlinePlus API Error:', medlineError.message);
+                // Fallback to Local DB on error
+                const tests = await LabTest.find({
+                    $or: [{ name: regex }, { category: regex }]
+                }).select('name description category _id').limit(5);
+
+                results.push(...tests.map(t => ({ ...t.toObject(), type: 'test', source: 'Local (Fallback)' })));
+            }
         }
 
         res.status(200).json({ success: true, data: results });
@@ -118,6 +178,7 @@ exports.getAllMedicines = async (req, res) => {
 
 exports.getAllTests = async (req, res) => {
     try {
+        // MedlinePlus doesn't have a "get all", so we just return local defaults as "Common Tests"
         const tests = await LabTest.find({}).sort({ name: 1 });
         res.status(200).json({ success: true, count: tests.length, data: tests });
     } catch (error) {
@@ -162,10 +223,54 @@ exports.getMedicineById = async (req, res) => {
 
 exports.getTestById = async (req, res) => {
     try {
-        const test = await LabTest.findById(req.params.id);
-        if (!test) return res.status(404).json({ success: false, message: 'Test not found' });
-        res.status(200).json({ success: true, data: test });
+        const { id } = req.params;
+
+        // Check Local DB first
+        if (id.match(/^[0-9a-fA-F]{24}$/)) {
+            const test = await LabTest.findById(id);
+            if (test) return res.status(200).json({ success: true, data: test });
+        }
+
+        // MedlinePlus Fetch by ID (We use base64 encoded title as ID)
+        try {
+            // Decode the ID to get the term
+            const term = Buffer.from(id, 'base64').toString('ascii');
+
+            // We have to search again to get the details
+            const medlineUrl = `https://wsearch.nlm.nih.gov/ws/query?db=healthTopics&term=${encodeURIComponent(term)}`;
+            const response = await axios.get(medlineUrl);
+            const xmlData = response.data;
+
+            // Extract first result's details
+            const docMatch = new RegExp(`<document rank="0" url="([^"]+)">([\\s\\S]*?)</document>`, 'i').exec(xmlData);
+
+            if (docMatch) {
+                const innerXml = docMatch[2];
+                const title = extractContentByName(innerXml, 'title') || term;
+                const summary = extractContentByName(innerXml, 'FullSummary') || extractContentByName(innerXml, 'snippet');
+                const cleanTitle = title.replace(/<[^>]*>/g, '');
+
+                const mappedTest = {
+                    _id: id,
+                    name: cleanTitle,
+                    description: summary, // Contains HTML usually
+                    category: 'Lab Test',
+                    normalRange: 'Refer to specific lab result provided by your doctor.', // Static for API
+                    preparation: 'Follow doctor\'s instructions.',
+                    clinicalSignificance: 'See summary for details.',
+                    source: 'MedlinePlus'
+                };
+                return res.status(200).json({ success: true, data: mappedTest });
+            }
+
+        } catch (apiError) {
+            console.error('MedlinePlus Detail Error:', apiError.message);
+        }
+
+        res.status(404).json({ success: false, message: 'Test not found' });
+
     } catch (error) {
+        console.error('Get Test Error:', error);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
