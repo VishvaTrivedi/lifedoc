@@ -35,4 +35,7 @@ const articleSchema = new mongoose.Schema({
     }
 });
 
+// Index for optimizing news feed queries
+articleSchema.index({ publishedAt: -1 });
+
 module.exports = mongoose.model('Article', articleSchema);

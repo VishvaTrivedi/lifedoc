@@ -15,7 +15,7 @@ const familyRoutes = require("./routes/family");
 const savedPostRoutes = require("./routes/savedPosts");
 const shareRoutes = require("./routes/share");
 const { startCronJob } = require("./jobs/newsFetcher");
-
+const compression = require("compression");
 
 const app = express();
 dotenv.config();
@@ -29,12 +29,7 @@ if (process.env.NODE_ENV !== 'test') {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
-
-// Debug Middleware: Log all requests
-app.use((req, res, next) => {
-  console.log(`[DEBUG] Received Request: ${req.method} ${req.url}`);
-  next();
-});
+app.use(compression()); // Enable Gzip/Brotli compression
 
 // Connect to MongoDB
 if (require.main === module) {
