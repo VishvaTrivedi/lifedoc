@@ -62,6 +62,7 @@ router.post("/verify-otp", async (req, res) => {
       name: user.name,
       email: user.email,
       age: user.age,
+      type: user.type, // Include role in response
       profileImage: user.profileImage
     };
 
@@ -91,6 +92,7 @@ router.post("/login", async (req, res) => {
       name: user.name,
       email: user.email,
       age: user.age,
+      type: user.type, // Include role in response
       profileImage: user.profileImage
     };
 
@@ -153,6 +155,7 @@ router.get("/profile", authMiddleware, async (req, res) => {
       name: user.name,
       email: user.email,
       age: user.age,
+      type: user.type,
       profileImage: user.profileImage,
       profile: user.profile || {}
     };

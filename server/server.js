@@ -58,6 +58,7 @@ app.use("/api/reference", referenceRoutes);
 app.use("/api/family", familyRoutes);
 app.use("/api/saved-posts", savedPostRoutes);
 app.use("/api/share", shareRoutes);
+app.use("/api/admin", require("./routes/adminRoutes"));
 
 
 // 404 Handler - If no route matched

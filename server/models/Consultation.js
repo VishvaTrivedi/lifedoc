@@ -35,6 +35,11 @@ const consultationSchema = new mongoose.Schema({
     date: {
         type: Date,
         default: Date.now
+    },
+    tokenUsage: {
+        promptTokens: { type: Number, default: 0 },
+        completionTokens: { type: Number, default: 0 },
+        totalTokens: { type: Number, default: 0 }
     }
 });
 

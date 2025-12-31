@@ -1,8 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaHome, FaHeartbeat, FaBookMedical, FaFileMedical, FaUserMd, FaSignOutAlt, FaMicrophone, FaCamera, FaUser, FaLightbulb, FaCalendarAlt, FaUsers, FaBell } from 'react-icons/fa';
-import { useDispatch, useSelector } from 'react-redux';
+import { FaChartLine, FaUsers, FaSignOutAlt, FaCog, FaArrowLeft, FaCapsules, FaRobot } from 'react-icons/fa';
+import { useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { logoutUser } from '@/store/slices/authSlice';
 import { AppDispatch } from '@/store/store';
@@ -12,11 +12,10 @@ interface SidebarProps {
     onClose?: () => void;
 }
 
-const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
+const AdminSidebar = ({ isOpen = false, onClose }: SidebarProps) => {
     const pathname = usePathname();
     const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
-    const { user } = useSelector((state: any) => state.auth); // Typed as any to access custom user fields without modifying slice types immediately
 
     const handleLogout = async () => {
         await dispatch(logoutUser());
@@ -24,23 +23,11 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
     };
 
     const navItems = [
-        { name: 'Dashboard', path: '/dashboard', icon: FaHome },
-        { name: 'AI Consultation', path: '/consultation', icon: FaMicrophone },
-        // { name: 'Rx Scanner', path: '/scan', icon: FaCamera },
-        { name: 'Measurements', path: '/measurements', icon: FaHeartbeat },
-        { name: 'Diary', path: '/diary', icon: FaBookMedical },
-        { name: 'Medical Info', path: '/medical-info', icon: FaBookMedical },
-        { name: 'Lab Reports', path: '/lab-reports', icon: FaFileMedical },
-        { name: 'Doctor Reports', path: '/doctor-reports', icon: FaUserMd },
-        { name: 'Appointments', path: '/appointments', icon: FaCalendarAlt },
-        { name: 'Family Health', path: '/family', icon: FaUsers },
-        { name: 'Insights', path: '/insights', icon: FaLightbulb },
+        { name: 'Overview', path: '/admin', icon: FaChartLine },
+        { name: 'Medical DB', path: '/admin/medical-database', icon: FaCapsules },
+        { name: 'AI Monitor', path: '/admin/ai-monitoring', icon: FaRobot },
+        // { name: 'Settings', path: '/admin/settings', icon: FaCog },
     ];
-
-    if (user?.type === 'admin') {
-        navItems.unshift({ name: 'Admin Panel', path: '/admin', icon: FaUsers });
-    }
-
 
     return (
         <>
@@ -56,7 +43,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                 }`}>
                 <div className="p-8">
                     <h1 className="text-2xl font-extrabold flex items-center space-x-2 text-gray-900 tracking-tight">
-                        <span>Docmetry</span>
+                        <span className="text-[#3AAFA9]">Admin</span><span>Panel</span>
                     </h1>
                 </div>
 
@@ -67,7 +54,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                             <Link
                                 key={item.path}
                                 href={item.path}
-                                onClick={onClose} // Close sidebar on nav click (mobile)
+                                onClick={onClose}
                                 className={`flex items-center space-x-3 px-5 py-3.5 rounded-sm transition-all duration-300 group ${isActive
                                     ? 'bg-gradient-primary text-white shadow-md shadow-[#7A8E6B]/20'
                                     : 'text-gray-500 hover:bg-[#7A8E6B]/10 hover:text-[#7A8E6B]'
@@ -81,20 +68,14 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                 </nav>
 
                 <div className="p-4 border-t border-gray-100 space-y-2">
-                    <div className="flex items-center justify-between px-4 py-2 bg-gray-50 rounded-lg">
-                        <span className="text-xs font-bold text-gray-500 uppercase">Settings & Accessibility</span>
-                    </div>
                     <Link
-                        href="/profile"
+                        href="/dashboard"
                         onClick={onClose}
                         className="flex items-center space-x-3 px-4 py-2 w-full rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                     >
-                        <FaUser className="text-xl" />
-                        <span className="font-medium">Profile</span>
+                        <FaArrowLeft className="text-lg" />
+                        <span className="font-medium">User View</span>
                     </Link>
-
-
-                    <div className="h-px bg-gray-200 my-2"></div>
 
                     <button
                         onClick={handleLogout}
@@ -109,4 +90,4 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
     );
 };
 
-export default Sidebar;
+export default AdminSidebar;
