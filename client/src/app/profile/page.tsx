@@ -6,7 +6,9 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { updateUserProfile, uploadProfilePhoto, fetchUserProfile } from '@/store/slices/authSlice';
-import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight, FaBookmark } from 'react-icons/fa';
+import axios from 'axios';
+import Link from 'next/link';
 
 export default function Profile() {
     const dispatch = useDispatch<AppDispatch>();
@@ -35,6 +37,31 @@ export default function Profile() {
     const [additionalDetails, setAdditionalDetails] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+
+    // Saved Posts State
+    const [savedPosts, setSavedPosts] = useState<any[]>([]);
+    const [loadingSaved, setLoadingSaved] = useState(false);
+
+    useEffect(() => {
+        const fetchSavedPosts = async () => {
+            if (token) {
+                setLoadingSaved(true);
+                try {
+                    const res = await axios.get('http://localhost:5000/api/saved-posts', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    if (res.data.success) {
+                        setSavedPosts(res.data.data);
+                    }
+                } catch (error) {
+                    console.error("Error fetching saved posts", error);
+                } finally {
+                    setLoadingSaved(false);
+                }
+            }
+        };
+        fetchSavedPosts();
+    }, [token]);
 
     const commonDiseases = ["Diabetes", "Hypertension", "Asthma", "Arthritis", "Heart Disease", "Thyroid", "None of these"];
 
@@ -390,6 +417,55 @@ export default function Profile() {
                                 </div>
                             </div>
                         )}
+
+                        {/* Saved Posts Section */}
+                        <div className="mt-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                                        <FaBookmark />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-800">Saved Articles</h3>
+                                </div>
+                                {savedPosts.length > 3 && (
+                                    <Link href="/profile/saved-posts" className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1">
+                                        View All <FaChevronRight className="text-xs" />
+                                    </Link>
+                                )}
+                            </div>
+
+                            {loadingSaved ? (
+                                <div className="text-center py-4 text-gray-500">Loading saved posts...</div>
+                            ) : savedPosts.length === 0 ? (
+                                <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                    <p className="text-gray-500">You haven't saved any articles yet.</p>
+                                    <Link href="/insights" className="text-blue-600 font-medium hover:underline mt-2 inline-block">
+                                        Browse Health Insights
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {savedPosts.slice(0, 3).map((post) => (
+                                        <div key={post.savedPostId} className="border border-gray-100 rounded-xl p-4 hover:bg-gray-50 transition-colors flex gap-4">
+                                            {post.imageUrl && (
+                                                <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                                                    <img src={post.imageUrl} alt={post.title} className="w-full h-full object-cover" />
+                                                </div>
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-gray-900 line-clamp-2 text-sm mb-1">{post.title}</h4>
+                                                <div className="flex justify-between items-center mt-2">
+                                                    <span className="text-xs text-gray-500">{new Date(post.savedAt).toLocaleDateString()}</span>
+                                                    <a href={post.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 hover:underline">
+                                                        Read Article
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Edit Modal */}

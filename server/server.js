@@ -12,6 +12,7 @@ const newsRoutes = require("./routes/news");
 const appointmentRoutes = require("./routes/appointments");
 const referenceRoutes = require("./routes/reference");
 const familyRoutes = require("./routes/family");
+const savedPostRoutes = require("./routes/savedPosts");
 const { startCronJob } = require("./jobs/newsFetcher");
 
 
@@ -54,6 +55,7 @@ app.use("/api/upload", require("./routes/upload"));
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/reference", referenceRoutes);
 app.use("/api/family", familyRoutes);
+app.use("/api/saved-posts", savedPostRoutes);
 
 
 // 404 Handler - If no route matched
