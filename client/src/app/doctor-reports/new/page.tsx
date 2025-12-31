@@ -8,7 +8,9 @@ import { createDoctorReport } from '@/store/slices/doctorReportsSlice';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaArrowLeft, FaUserMd, FaPrescriptionBottleAlt, FaPlus, FaTrash } from 'react-icons/fa';
 
-export default function NewDoctorReportPage() {
+import { Suspense } from 'react';
+
+function NewDoctorReportContent() {
     const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -229,5 +231,13 @@ export default function NewDoctorReportPage() {
                 </div>
             </DashboardLayout >
         </ProtectedRoute >
+    );
+}
+
+export default function NewDoctorReportPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <NewDoctorReportContent />
+        </Suspense>
     );
 }
