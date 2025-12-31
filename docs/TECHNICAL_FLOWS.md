@@ -187,3 +187,34 @@ flowchart TD
     Family --> Link[Click 'Live Track' Link]
     Link --> Map[Real-time Maps View]
 ```
+
+## 8. Doctor Access Flow (QR Code Logic)
+
+This flow illustrates how a doctor gains temporary, read-only access to a patient's medical history without needing a permanent account link.
+
+```mermaid
+sequenceDiagram
+    participant PatientApp
+    participant DoctorDevice
+    participant Server
+    participant DB as MongoDB
+
+    Note over PatientApp, DoctorDevice: Scenario: Emergency Room Visit
+    
+    PatientApp->>Server: Request Access & Generate QR
+    Server->>DB: Create Temp Token (Expires in 30m)
+    Server-->>PatientApp: Return Token ID
+    PatientApp->>PatientApp: Display QR Code (Token ID)
+    
+    DoctorDevice->>PatientApp: Scans QR Code
+    DoctorDevice->>Server: GET /api/doctor/access/{token}
+    Server->>DB: Validate Token & Check Expiry
+    
+    alt Token Valid
+        DB-->>Server: Token Valid (PatientID: 123)
+        Server->>DB: Fetch Patient History (Last 3 Months)
+        Server-->>DoctorDevice: Return Read-Only Medical Record
+    else Token Expired
+        Server-->>DoctorDevice: Access Denied (403)
+    end
+```

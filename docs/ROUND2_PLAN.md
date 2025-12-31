@@ -80,6 +80,14 @@ Based on the success of our Round 1 Prototype, we have developed a comprehensive
 *   **Technical Implementation:**
     *   **AR overlay:** Using **ARCore (Google)** to project a 3D model of the heart/liver onto the user's body via the camera to explain conditions like "Fatty Liver".
 
+### 9. 🩺 Doctor Ecosystem & QR Access
+*   **The Concept:** A dedicated interface for Doctors to view patient history securely.
+*   **Why It Important:** Doctors in ERs often treat patients blindly without knowing their allergies or past surgeries.
+*   **Technical Implementation:**
+    *   **Scan-to-Access:** Patients generate a temporary **QR Code** on their phone.
+    *   **Doctor Portal:** The doctor scans it to unlock a **"Read-Only View"** of the patient's records for 30 minutes.
+    *   **Verification:** Doctors must be KYC-verified (Medical License upload) to access the system.
+
 ---
 
 ## 🛠 Improvements to Existing Core
