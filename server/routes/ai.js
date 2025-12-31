@@ -66,6 +66,11 @@ router.post('/analyze', auth, async (req, res) => {
             aiResult = JSON.parse(cleanText);
         }
 
+        // Estimate usage if not provided by API (Gemini often includes it in usageMetadata, but fallback is simple char count)
+        const promptTokens = Math.ceil(prompt.length / 4);
+        const completionTokens = Math.ceil(textResponse.length / 4);
+        const totalTokens = promptTokens + completionTokens;
+
         // Save to Database
         const newConsultation = new Consultation({
             user: req.user.id,
@@ -75,7 +80,12 @@ router.post('/analyze', auth, async (req, res) => {
             actions: aiResult.actions || [],
             lifestyleAdvice: aiResult.lifestyleAdvice || [],
             suggestedMedicines: aiResult.suggestedMedicines || [],
-            language: language || 'en'
+            language: language || 'en',
+            tokenUsage: {
+                promptTokens,
+                completionTokens,
+                totalTokens
+            }
         });
 
         await newConsultation.save();

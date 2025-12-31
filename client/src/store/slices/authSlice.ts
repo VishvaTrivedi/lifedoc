@@ -8,6 +8,7 @@ interface User {
   name: string;
   email: string;
   age?: number;
+  type?: string;
   profile?: {
     gender?: string;
     height?: number;

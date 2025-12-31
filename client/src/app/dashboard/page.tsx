@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { fetchMeasurements } from '@/store/slices/measurementsSlice';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FaHeartbeat, FaTint, FaWeight, FaCalendarCheck, FaMicrophone, FaFileMedical, FaRobot, FaArrowRight } from 'react-icons/fa';
 
 // Components
@@ -21,12 +22,15 @@ export default function Dashboard() {
     const { measurements, loading } = useSelector((state: RootState) => state.measurements);
     const [isClient, setIsClient] = useState(false);
 
+    const router = useRouter(); // Import useRouter
+
     useEffect(() => {
         setIsClient(true);
+        // Removed admin redirect so admins can view user dashboard
         if (user?.id) {
             dispatch(fetchMeasurements(user.id));
         }
-    }, [dispatch, user]);
+    }, [dispatch, user, router]);
 
     // Derived Data for Vitals
     const latestGlucose = useMemo(() =>
