@@ -6,7 +6,8 @@ import DashboardLayout from '@/components/DashboardLayout';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
-import { FaMicrophone, FaStop, FaRobot, FaVolumeUp, FaLanguage } from 'react-icons/fa';
+import { FaMicrophone, FaStop, FaRobot, FaVolumeUp, FaLanguage, FaFileUpload } from 'react-icons/fa';
+import ReactMarkdown from 'react-markdown';
 
 export default function ConsultationPage() {
     const [isClient, setIsClient] = useState(false);
@@ -86,6 +87,20 @@ export default function ConsultationPage() {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = language === 'en' ? 'en-US' : language === 'hi' ? 'hi-IN' : 'gu-IN';
         window.speechSynthesis.speak(utterance);
+    };
+
+    const handleRequestReview = async () => {
+        if (!aiResult?._id) return; // Should have ID from backend
+        try {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/consultation/${aiResult._id}/request-review`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            setAiResult({ ...aiResult, reviewStatus: 'pending' });
+            alert("Review requested! A doctor will look at this shortly.");
+        } catch (error) {
+            console.error("Review Request Error", error);
+        }
     };
 
     return (
@@ -251,6 +266,40 @@ export default function ConsultationPage() {
                                                         </div>
                                                     </div>
                                                 )}
+
+                                                {/* ID Check: Only show review options if we have a saved ID back from server */}
+                                                {aiResult?._id && (
+                                                    <div className="mt-8 pt-6 border-t border-dashed border-gray-200">
+                                                        {aiResult.reviewStatus === 'reviewed' ? (
+                                                            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs">
+                                                                        <FaRobot /> {/* Should actually be FaUserMd but avoiding import mess for now */}
+                                                                    </div>
+                                                                    <h4 className="font-bold text-purple-900">Verified by Doctor</h4>
+                                                                </div>
+                                                                <p className="text-purple-800 text-sm italic">
+                                                                    "{aiResult.doctorNotes}"
+                                                                </p>
+                                                            </div>
+                                                        ) : aiResult.reviewStatus === 'pending' ? (
+                                                            <div className="flex items-center gap-3 text-orange-600 bg-orange-50 px-4 py-3 rounded-xl border border-orange-100">
+                                                                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                                                                <span className="font-medium text-sm">Review Pending - A doctor will check this soon.</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex justify-center">
+                                                                <button
+                                                                    onClick={handleRequestReview}
+                                                                    className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 shadow-sm hover:shadow-md text-gray-700 font-bold rounded-xl transition-all hover:bg-gray-50 text-sm"
+                                                                >
+                                                                    <span>Want a Second Opinion?</span>
+                                                                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500">Request Doctor Review</span>
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -263,3 +312,4 @@ export default function ConsultationPage() {
         </ProtectedRoute>
     );
 }
+      
