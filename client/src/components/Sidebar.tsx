@@ -65,7 +65,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                     </h1>
                 </div>
 
-                <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+                <nav className="flex-1 px-4 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     {navItems.map((item) => {
                         const isActive = pathname === item.path;
                         return (
