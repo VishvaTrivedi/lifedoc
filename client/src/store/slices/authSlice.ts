@@ -8,6 +8,7 @@ interface User {
   name: string;
   email: string;
   age?: number;
+  type?: string;
   profile?: {
     gender?: string;
     height?: number;
@@ -15,8 +16,16 @@ interface User {
     bloodGroup?: string;
     chronicConditions?: string[];
     photoUrl?: string;
+    storyDesc?: string;
   };
   profileImage?: string;
+  sosContacts?: {
+    name: string;
+    phone: string;
+    relationship?: string;
+    email?: string;
+    _id?: string;
+  }[];
 }
 
 interface AuthState {
@@ -154,6 +163,12 @@ export const updateUserProfile = createAsyncThunk(
       weight?: number;
       bloodGroup?: string;
       chronicConditions?: string[];
+      sosContacts?: {
+        name: string;
+        phone: string;
+        relationship?: string;
+        email?: string;
+      }[];
     },
     { rejectWithValue }
   ) => {

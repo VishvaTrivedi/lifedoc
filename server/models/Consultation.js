@@ -22,6 +22,12 @@ const consultationSchema = new mongoose.Schema({
     actions: [{
         type: String
     }],
+    lifestyleAdvice: [{
+        type: String
+    }],
+    suggestedMedicines: [{
+        type: String
+    }],
     language: {
         type: String,
         default: 'en'
@@ -29,6 +35,27 @@ const consultationSchema = new mongoose.Schema({
     date: {
         type: Date,
         default: Date.now
+    },
+    tokenUsage: {
+        promptTokens: { type: Number, default: 0 },
+        completionTokens: { type: Number, default: 0 },
+        totalTokens: { type: Number, default: 0 }
+    },
+    // Expert Review Fields
+    reviewStatus: {
+        type: String,
+        enum: ['none', 'pending', 'reviewed'],
+        default: 'none'
+    },
+    reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    doctorNotes: {
+        type: String
+    },
+    reviewDate: {
+        type: Date
     }
 });
 

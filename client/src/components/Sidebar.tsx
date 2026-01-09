@@ -1,8 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaHome, FaHeartbeat, FaBookMedical, FaFileMedical, FaUserMd, FaSignOutAlt, FaMicrophone, FaCamera, FaUser } from 'react-icons/fa';
-import { useDispatch } from 'react-redux';
+import { FaHome, FaHeartbeat, FaBookMedical, FaFileMedical, FaUserMd, FaSignOutAlt, FaMicrophone, FaCamera, FaUser, FaLightbulb, FaCalendarAlt, FaUsers, FaBell, FaHistory } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { logoutUser } from '@/store/slices/authSlice';
 import { AppDispatch } from '@/store/store';
@@ -16,6 +16,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
     const pathname = usePathname();
     const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
+    const { user } = useSelector((state: any) => state.auth); // Typed as any to access custom user fields without modifying slice types immediately
 
     const handleLogout = async () => {
         await dispatch(logoutUser());
@@ -25,12 +26,26 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
     const navItems = [
         { name: 'Dashboard', path: '/dashboard', icon: FaHome },
         { name: 'AI Consultation', path: '/consultation', icon: FaMicrophone },
-        { name: 'Rx Scanner', path: '/scan', icon: FaCamera },
+        { name: 'My History', path: '/consultation/history', icon: FaHistory },
+        // { name: 'Rx Scanner', path: '/scan', icon: FaCamera },
         { name: 'Measurements', path: '/measurements', icon: FaHeartbeat },
         { name: 'Diary', path: '/diary', icon: FaBookMedical },
+        { name: 'Medical Info', path: '/medical-info', icon: FaBookMedical },
         { name: 'Lab Reports', path: '/lab-reports', icon: FaFileMedical },
         { name: 'Doctor Reports', path: '/doctor-reports', icon: FaUserMd },
+        { name: 'Appointments', path: '/appointments', icon: FaCalendarAlt },
+        { name: 'Family Health', path: '/family', icon: FaUsers },
+        { name: 'Insights', path: '/insights', icon: FaLightbulb },
     ];
+
+    if (user?.type === 'admin') {
+        navItems.unshift({ name: 'Admin Panel', path: '/admin', icon: FaUsers });
+    }
+
+    if (user?.type === 'doctor') {
+        navItems.unshift({ name: 'Doctor Dashboard', path: '/doctor/dashboard', icon: FaUserMd });
+    }
+
 
     return (
         <>
@@ -50,7 +65,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                     </h1>
                 </div>
 
-                <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+                <nav className="flex-1 px-4 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     {navItems.map((item) => {
                         const isActive = pathname === item.path;
                         return (
@@ -82,20 +97,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                         <FaUser className="text-xl" />
                         <span className="font-medium">Profile</span>
                     </Link>
-                    <button
-                        onClick={() => document.body.classList.toggle('large-text')}
-                        className="flex items-center space-x-3 px-4 py-2 w-full rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                    >
-                        <span className="text-xl">Aa</span>
-                        <span className="font-medium">Big Text</span>
-                    </button>
-                    <button
-                        onClick={() => document.body.classList.toggle('high-contrast')}
-                        className="flex items-center space-x-3 px-4 py-2 w-full rounded-xl text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                    >
-                        <span className="text-xl">👁️</span>
-                        <span className="font-medium">Contrast</span>
-                    </button>
+
 
                     <div className="h-px bg-gray-200 my-2"></div>
 

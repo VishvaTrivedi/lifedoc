@@ -62,6 +62,7 @@ router.post("/verify-otp", async (req, res) => {
       name: user.name,
       email: user.email,
       age: user.age,
+      type: user.type, // Include role in response
       profileImage: user.profileImage
     };
 
@@ -91,6 +92,7 @@ router.post("/login", async (req, res) => {
       name: user.name,
       email: user.email,
       age: user.age,
+      type: user.type, // Include role in response
       profileImage: user.profileImage
     };
 
@@ -153,7 +155,9 @@ router.get("/profile", authMiddleware, async (req, res) => {
       name: user.name,
       email: user.email,
       age: user.age,
+      type: user.type,
       profileImage: user.profileImage,
+      sosContacts: user.sosContacts || [],
       profile: user.profile || {}
     };
 
@@ -166,7 +170,7 @@ router.get("/profile", authMiddleware, async (req, res) => {
 // Update user profile - protected route
 router.put("/profile", authMiddleware, async (req, res) => {
   try {
-    const { name, age, gender, height, weight, bloodGroup, chronicConditions } = req.body;
+    const { name, age, gender, height, weight, bloodGroup, chronicConditions, sosContacts } = req.body;
 
     // Build update object
     const updateData = {};
@@ -190,6 +194,11 @@ router.put("/profile", authMiddleware, async (req, res) => {
     if (bloodGroup) user.profile.bloodGroup = bloodGroup;
     if (chronicConditions) user.profile.chronicConditions = chronicConditions;
 
+    // Update SOS Contacts if provided
+    if (sosContacts) {
+      user.sosContacts = sosContacts;
+    }
+
     await user.save();
 
     const userData = {
@@ -198,6 +207,7 @@ router.put("/profile", authMiddleware, async (req, res) => {
       email: user.email,
       age: user.age,
       profileImage: user.profileImage,
+      sosContacts: user.sosContacts,
       profile: user.profile
     };
 

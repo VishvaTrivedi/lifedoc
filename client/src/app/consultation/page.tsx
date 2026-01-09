@@ -4,13 +4,19 @@ import { useState, useEffect } from 'react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import DashboardLayout from '@/components/DashboardLayout';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-import { FaMicrophone, FaStop, FaRobot, FaVolumeUp, FaLanguage } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/store/store';
+import { FaMicrophone, FaStop, FaRobot, FaVolumeUp, FaLanguage, FaFileUpload } from 'react-icons/fa';
+import ReactMarkdown from 'react-markdown';
 
 export default function ConsultationPage() {
     const [isClient, setIsClient] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
-    const [aiResponse, setAiResponse] = useState<string | null>(null);
+    const [aiResult, setAiResult] = useState<any | null>(null); // Changed to object
     const [language, setLanguage] = useState<'en' | 'hi' | 'gu'>('en');
+
+    const dispatch = useDispatch<AppDispatch>();
+    const { token } = useSelector((state: RootState) => state.auth);
 
     // Speech Recognition Hook
     const {
@@ -38,7 +44,7 @@ export default function ConsultationPage() {
 
     const handleStartListening = () => {
         resetTranscript();
-        setAiResponse(null);
+        setAiResult(null);
         SpeechRecognition.startListening({ continuous: true, language: language === 'en' ? 'en-US' : language === 'hi' ? 'hi-IN' : 'gu-IN' });
     };
 
@@ -52,11 +58,11 @@ export default function ConsultationPage() {
     const analyzeSymptoms = async (text: string) => {
         setAnalyzing(true);
         try {
-            const response = await fetch('http://localhost:3001/api/ai/analyze', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/analyze`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // 'Authorization': `Bearer ${token}` // Add token if auth middleware is enabled
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ text, language })
             });
@@ -64,14 +70,14 @@ export default function ConsultationPage() {
             const data = await response.json();
 
             if (data.summary) {
-                setAiResponse(data.summary);
+                setAiResult(data);
                 speakResponse(data.summary);
             } else {
-                setAiResponse("I'm sorry, I couldn't understand that. Could you please try again?");
+                setAiResult({ summary: "I'm sorry, I couldn't understand that. Could you please try again?" });
             }
         } catch (error) {
             console.error("Analysis Error:", error);
-            setAiResponse("Sorry, I am having trouble connecting to the brain. Please try again later.");
+            setAiResult({ summary: "Sorry, I am having trouble connecting to the brain. Please try again later." });
         } finally {
             setAnalyzing(false);
         }
@@ -81,6 +87,20 @@ export default function ConsultationPage() {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = language === 'en' ? 'en-US' : language === 'hi' ? 'hi-IN' : 'gu-IN';
         window.speechSynthesis.speak(utterance);
+    };
+
+    const handleRequestReview = async () => {
+        if (!aiResult?._id) return; // Should have ID from backend
+        try {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/consultation/${aiResult._id}/request-review`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            setAiResult({ ...aiResult, reviewStatus: 'pending' });
+            alert("Review requested! A doctor will look at this shortly.");
+        } catch (error) {
+            console.error("Review Request Error", error);
+        }
     };
 
     return (
@@ -150,11 +170,11 @@ export default function ConsultationPage() {
                         </div>
 
                         {/* Transcript / AI Response Area */}
-                        {(transcript || aiResponse || analyzing) && (
+                        {(transcript || aiResult || analyzing) && (
                             <div className="w-full glass rounded-[2rem] p-8 shadow-xl transition-all duration-500 animate-in fade-in slide-in-from-bottom-4">
-                                <div className="flex flex-col md:flex-row gap-8">
-                                    {/* User Speech */}
-                                    <div className="flex-1">
+                                <div className="flex flex-col gap-8">
+                                    {/* User Speech Section */}
+                                    <div className="border-b border-gray-100 pb-6">
                                         <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center">
                                             <span className="w-2 h-2 rounded-full bg-gray-300 mr-2"></span> You Said
                                         </h3>
@@ -163,35 +183,124 @@ export default function ConsultationPage() {
                                         </p>
                                     </div>
 
-                                    {/* Divider */}
-                                    <div className="w-full md:w-px h-px md:h-auto bg-gray-200 my-4 md:my-0"></div>
-
-                                    {/* AI Response */}
-                                    <div className="flex-1 relative">
-                                        <h3 className="text-xs font-bold text-[#7A8E6B] uppercase mb-3 flex items-center">
-                                            <span className="w-2 h-2 rounded-full bg-[#7A8E6B] mr-2"></span> Docmetry Analysis
-                                        </h3>
+                                    {/* AI Analysis Section */}
+                                    <div className="relative">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h3 className="text-xs font-bold text-[#7A8E6B] uppercase flex items-center">
+                                                <span className="w-2 h-2 rounded-full bg-[#7A8E6B] mr-2"></span> Docmetry Analysis
+                                            </h3>
+                                            {aiResult?.urgency && (
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${aiResult.urgency === 'High' ? 'bg-red-100 text-red-600' :
+                                                    aiResult.urgency === 'Medium' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
+                                                    }`}>
+                                                    Urgency: {aiResult.urgency}
+                                                </span>
+                                            )}
+                                        </div>
 
                                         {analyzing ? (
-                                            <div className="flex space-x-2 py-4">
+                                            <div className="flex space-x-2 py-4 justify-center">
                                                 <div className="w-2.5 h-2.5 bg-[#7A8E6B] rounded-full animate-bounce"></div>
                                                 <div className="w-2.5 h-2.5 bg-[#A9C29B] rounded-full animate-bounce animation-delay-100"></div>
                                                 <div className="w-2.5 h-2.5 bg-[#7A8E6B] rounded-full animate-bounce animation-delay-200"></div>
                                             </div>
                                         ) : (
-                                            <>
-                                                <p className="text-lg text-gray-800 leading-relaxed font-medium">
-                                                    {aiResponse}
-                                                </p>
-                                                {aiResponse && (
-                                                    <button
-                                                        onClick={() => speakResponse(aiResponse as string)}
-                                                        className="mt-4 flex items-center space-x-2 text-sm font-bold text-[#7A8E6B] hover:text-[#5D6F51] transition-colors"
-                                                    >
-                                                        <FaVolumeUp /> <span>Replay Audio</span>
-                                                    </button>
+                                            <div className="space-y-6">
+                                                <div>
+                                                    <p className="text-lg text-gray-800 leading-relaxed font-medium">
+                                                        {aiResult?.summary}
+                                                    </p>
+                                                    {aiResult?.summary && (
+                                                        <button
+                                                            onClick={() => speakResponse(aiResult.summary)}
+                                                            className="mt-2 text-sm font-bold text-[#7A8E6B] hover:text-[#5D6F51] transition-colors flex items-center"
+                                                        >
+                                                            <FaVolumeUp className="mr-2" /> Replay Audio
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                {/* Lifestyle Advice */}
+                                                {aiResult?.lifestyleAdvice && aiResult.lifestyleAdvice.length > 0 && (
+                                                    <div className="bg-green-50 rounded-xl p-5">
+                                                        <h4 className="font-bold text-green-800 mb-3 text-sm uppercase tracking-wide">🌱 Lifestyle Recommendations</h4>
+                                                        <ul className="space-y-2">
+                                                            {aiResult.lifestyleAdvice.map((item: string, idx: number) => (
+                                                                <li key={idx} className="flex items-start text-green-900">
+                                                                    <span className="mr-2 mt-1.5 w-1.5 h-1.5 bg-green-400 rounded-full flex-shrink-0"></span>
+                                                                    {item}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
                                                 )}
-                                            </>
+
+                                                {/* Suggested Medicines */}
+                                                {aiResult?.suggestedMedicines && aiResult.suggestedMedicines.length > 0 && (
+                                                    <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
+                                                        <h4 className="font-bold text-blue-800 mb-3 text-sm uppercase tracking-wide">💊 Over-the-Counter Suggestions</h4>
+                                                        <ul className="space-y-2 mb-3">
+                                                            {aiResult.suggestedMedicines.map((item: string, idx: number) => (
+                                                                <li key={idx} className="flex items-start text-blue-900 font-medium">
+                                                                    <span className="mr-2 mt-1.5 w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0"></span>
+                                                                    {item}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                        <p className="text-xs text-blue-600 italic border-t border-blue-100 pt-2">
+                                                            ⚠️ Disclaimer: These are suggestions for common symptoms. Always consult a doctor before taking new medication.
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {/* Immediate Actions */}
+                                                {aiResult?.actions && aiResult.actions.length > 0 && (
+                                                    <div>
+                                                        <h4 className="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wide">⚡ Immediate Actions</h4>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {aiResult.actions.map((action: string, idx: number) => (
+                                                                <span key={idx} className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200">
+                                                                    {action}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* ID Check: Only show review options if we have a saved ID back from server */}
+                                                {aiResult?._id && (
+                                                    <div className="mt-8 pt-6 border-t border-dashed border-gray-200">
+                                                        {aiResult.reviewStatus === 'reviewed' ? (
+                                                            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs">
+                                                                        <FaRobot /> {/* Should actually be FaUserMd but avoiding import mess for now */}
+                                                                    </div>
+                                                                    <h4 className="font-bold text-purple-900">Verified by Doctor</h4>
+                                                                </div>
+                                                                <p className="text-purple-800 text-sm italic">
+                                                                    "{aiResult.doctorNotes}"
+                                                                </p>
+                                                            </div>
+                                                        ) : aiResult.reviewStatus === 'pending' ? (
+                                                            <div className="flex items-center gap-3 text-orange-600 bg-orange-50 px-4 py-3 rounded-xl border border-orange-100">
+                                                                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                                                                <span className="font-medium text-sm">Review Pending - A doctor will check this soon.</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex justify-center">
+                                                                <button
+                                                                    onClick={handleRequestReview}
+                                                                    className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 shadow-sm hover:shadow-md text-gray-700 font-bold rounded-xl transition-all hover:bg-gray-50 text-sm"
+                                                                >
+                                                                    <span>Want a Second Opinion?</span>
+                                                                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500">Request Doctor Review</span>
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -203,3 +312,4 @@ export default function ConsultationPage() {
         </ProtectedRoute>
     );
 }
+      
