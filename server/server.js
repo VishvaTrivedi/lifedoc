@@ -55,9 +55,13 @@ app.use("/api/family", familyRoutes);
 app.use("/api/saved-posts", savedPostRoutes);
 app.use("/api/share", shareRoutes);
 app.use("/api/admin", require("./routes/adminRoutes"));
+console.log("Loading SOS Routes...");
+app.use("/api/sos", require("./routes/sos")); // <--- SOS Feature
 app.use("/api/doctor-verification", require("./routes/doctorVerification"));
 app.use("/api/consultation", require("./routes/consultation"));
 app.use("/api/meetings", require("./routes/meetings"));
+
+
 
 
 

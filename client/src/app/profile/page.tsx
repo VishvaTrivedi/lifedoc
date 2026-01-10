@@ -6,10 +6,11 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store/store';
 import { updateUserProfile, uploadProfilePhoto, fetchUserProfile } from '@/store/slices/authSlice';
-import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight, FaBookmark, FaShareAlt, FaUserMd } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaBirthdayCake, FaIdCard, FaEdit, FaTimes, FaSave, FaCamera, FaStethoscope, FaCheck, FaChevronRight, FaBookmark, FaShareAlt, FaUserMd, FaCog } from 'react-icons/fa';
 import axios from 'axios';
 import Link from 'next/link';
 import { QRCodeCanvas } from 'qrcode.react';
+import LanguageSwitcher from '@/components/LanguageSwitcher'; // <--- Import
 
 export default function Profile() {
     const dispatch = useDispatch<AppDispatch>();
@@ -92,6 +93,22 @@ export default function Profile() {
         };
         fetchSavedPosts();
     }, [token]);
+
+    const [currentLanguage, setCurrentLanguage] = useState('en');
+
+    useEffect(() => {
+        const match = document.cookie.match(/googtrans=\/en\/([a-z]{2})/);
+        if (match) setCurrentLanguage(match[1]);
+    }, []);
+
+    const settingsLabels: any = {
+        en: { title: 'Settings', appLang: 'App Language', appLangDesc: 'Change the language of the application interface.' },
+        hi: { title: 'सेटिंग्स', appLang: 'ऐप भाषा', appLangDesc: 'एप्लीकेशन इंटरफ़ेस की भाषा बदलें।' },
+        gu: { title: 'સેટિંગ્સ', appLang: 'એપ્લિકેશન ભાષા', appLangDesc: 'એપ્લિકેશન ઇન્ટરફેસની ભાષા બદલો.' },
+        mr: { title: 'सेटिंग्स', appLang: 'अॅप भाषा', appLangDesc: 'अनुप्रयोग इंटरफेसची भाषा बदला.' }
+    };
+
+    const l = settingsLabels[currentLanguage] || settingsLabels.en;
 
     const commonDiseases = ["Diabetes", "Hypertension", "Asthma", "Arthritis", "Heart Disease", "Thyroid", "None of these"];
 
@@ -589,6 +606,30 @@ export default function Profile() {
                         </div>
 
 
+
+                        {/* Settings Section */}
+                        <div className="mt-8 bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
+                            <div className="flex justify-between items-center mb-8">
+                                <h3 className="text-xl font-extrabold text-gray-900 flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
+                                        <FaCog />
+                                    </div>
+                                    {l.title}
+                                </h3>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="p-6 bg-gradient-to-r from-gray-50 to-white rounded-2xl border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 group hover:border-blue-100 transition-colors">
+                                    <div className="flex-1">
+                                        <p className="font-black text-gray-900 text-lg mb-1 tracking-tight">{l.appLang}</p>
+                                        <p className="text-sm text-gray-500 leading-relaxed font-medium">{l.appLangDesc}</p>
+                                    </div>
+                                    <div className="relative shrink-0 w-full sm:w-auto">
+                                        {/* Embed Language Switcher Here */}
+                                        <LanguageSwitcher className="!relative !flex-row !bottom-auto !right-auto" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         {/* My Health Story Section */}
                         {user?.profile?.storyDesc && (

@@ -451,4 +451,52 @@ router.post('/analyze-lifestyle', auth, async (req, res) => {
     }
 });
 
+// POST /api/ai/guide
+// Desc: General Voice Assistant Persona
+router.post('/guide', auth, async (req, res) => {
+    try {
+        const { text } = req.body;
+
+        if (!process.env.GEMINI_API_KEY) {
+            return res.status(500).json({ msg: 'Server Configuration Error: API Key missing.' });
+        }
+
+        // Read the prompt
+        const promptPath = path.join(__dirname, '../prompts/voicePersona.txt');
+        if (!fs.existsSync(promptPath)) {
+            return res.status(500).json({ msg: 'System Error: Prompt file missing' });
+        }
+        const systemPrompt = fs.readFileSync(promptPath, 'utf8');
+
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+        const result = await model.generateContent({
+            contents: [{
+                role: "user",
+                parts: [{ text: `${systemPrompt}\n\nUser Question: "${text}"\n\nRespond as valid JSON:` }]
+            }],
+            generationConfig: { responseMimeType: "application/json" }
+        });
+
+        const response = await result.response;
+        const textResponse = response.text();
+
+        // Parse JSON safely
+        let aiResult;
+        try {
+            aiResult = JSON.parse(textResponse);
+        } catch (e) {
+            const cleanText = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+            aiResult = JSON.parse(cleanText);
+        }
+
+        res.json(aiResult);
+
+    } catch (err) {
+        console.error("Voice Guide Error:", err.message);
+        res.status(500).json({ msg: 'Error processing voice request', error: err.message });
+    }
+});
+
 module.exports = router;

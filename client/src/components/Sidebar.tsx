@@ -65,12 +65,13 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                     </h1>
                 </div>
 
-                <nav className="flex-1 px-4 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <nav id="onboarding-sidebar" className="flex-1 px-4 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     {navItems.map((item) => {
                         const isActive = pathname === item.path;
                         return (
                             <Link
                                 key={item.path}
+                                id={`sidebar-nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                                 href={item.path}
                                 onClick={onClose} // Close sidebar on nav click (mobile)
                                 className={`flex items-center space-x-3 px-5 py-3.5 rounded-sm transition-all duration-300 group ${isActive
