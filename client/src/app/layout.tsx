@@ -4,8 +4,6 @@ import "./globals.css";
 import { ReduxProvider } from "@/store/ReduxProvider";
 import ActionDock from "@/components/ActionDock";
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
   title: "LifeDoc - Your Health Documentation",
   description: "Create, organize, and share your medical records",
@@ -17,7 +15,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <head></head>
+      <body>
         <ReduxProvider>
           {children}
           <ActionDock />
